@@ -147,6 +147,16 @@ body.lang-he .step:before{left:auto;right:16px}
 .variable-table code{font-size:12px}
 .col-name{width:18%}.col-kind{width:12%}.col-type{width:21%}.col-value{width:17%}.col-purpose{width:32%}
 .small{font-size:13px;color:var(--muted)}
+.download-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:18px}
+.download-card{background:linear-gradient(180deg,#f8fbff,#eef5ff);border:1px solid #cddff3;border-radius:16px;padding:20px}
+.download-card h4{margin:0 0 8px;font-size:18px}
+.download-card p{margin:0 0 14px;color:#52657a}
+.download-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;
+  background:var(--infor);color:#fff!important;border-radius:10px;padding:10px 14px;font-weight:800;
+  border:1px solid var(--infor);max-width:100%;white-space:normal;text-align:center;overflow-wrap:anywhere}
+.download-btn:hover{background:var(--infor-dark);border-color:var(--infor-dark)}
+.download-note{font-size:12px;color:var(--muted);margin-top:10px}
+@media(max-width:700px){.download-grid{grid-template-columns:1fr}}
 .footer{text-align:center;color:#6b7c90;font-size:13px;padding:22px 0}
 .lang-block{display:none!important}
 body.lang-en .lang-block.en,body.lang-he .lang-block.he{display:revert!important}
@@ -222,6 +232,7 @@ body.lang-he .modal-close{right:auto;left:20px}
         <a href="#tests">9. Test evidence</a>
         <a href="#reuse">10. Reusability assessment</a>
         <a href="#rules">11. Design rules</a>
+        <a href="#downloads">12. Downloads</a>
       </div>
       <div class="lang-block he">
         <div class="toc-title">תוכן</div>
@@ -237,6 +248,7 @@ body.lang-he .modal-close{right:auto;left:20px}
         <a href="#tests">9. הוכחת בדיקות</a>
         <a href="#reuse">10. הערכת שימוש חוזר</a>
         <a href="#rules">11. כללי תכנון</a>
+        <a href="#downloads">12. הורדות</a>
       </div>
     </nav>
 
@@ -880,6 +892,55 @@ return false;</pre></div>
         <div class="callout ok">
           <div class="lang-block en"><b>Final architecture:</b> multiple company-aware FILE Connection Points → one shared ION flow → one MEC Agreement → one reusable Mapper framework → company-specific M3 execution selected from manifest context.</div>
           <div class="lang-block he"><b>הארכיטקטורה הסופית:</b> מספר FILE Connection Points בעלי הקשר חברה → ION Flow משותף אחד → MEC Agreement אחד → Mapper framework רב־שימושי אחד → הרצת M3 בחברה המתאימה לפי ה־manifest.</div>
+        </div>
+      </section>
+
+
+      <section class="section" id="downloads">
+        <div class="lang-block en">
+          <span class="kicker">Resources</span>
+          <h2>12. Downloads</h2>
+          <p class="lead">Project artifacts can be published next to this documentation and downloaded directly from the page.</p>
+          <div class="download-grid">
+            <div class="download-card">
+              <h4>InitialMapTemplate mapping archive</h4>
+              <p>Reusable MEC Mapper template containing Company resolution, initialization and standardized error handling.</p>
+              <a class="download-btn" href="InitialMapTemplate.zip" download>⬇ Download InitialMapTemplate.zip</a>
+              <div class="download-note">GitHub Pages: keep <code>InitialMapTemplate.zip</code> in the same repository folder as <code>index.html</code>.</div>
+            </div>
+            <div class="download-card">
+              <h4>Extend this section</h4>
+              <p>Additional mappings, XSDs, sample XMLs or implementation packages can be added later using the same pattern.</p>
+              <div class="code"><pre>&lt;a class="download-btn"
+   href="MyMapping.zip"
+   download&gt;
+   Download MyMapping.zip
+&lt;/a&gt;</pre></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="lang-block he">
+          <span class="kicker">משאבים</span>
+          <h2>12. הורדות</h2>
+          <p class="lead">ניתן לפרסם קבצי פרויקט לצד מסמך זה ולהוריד אותם ישירות מהעמוד.</p>
+          <div class="download-grid">
+            <div class="download-card">
+              <h4>ארכיון InitialMapTemplate</h4>
+              <p>תבנית MEC Mapper רב־שימושית הכוללת זיהוי חברה, אתחול וטיפול שגיאות אחיד.</p>
+              <a class="download-btn" href="InitialMapTemplate.zip" download>⬇ הורדת InitialMapTemplate.zip</a>
+              <div class="download-note">ב־GitHub Pages יש לשמור את <code>InitialMapTemplate.zip</code> באותה תיקייה בריפוזיטורי יחד עם <code>index.html</code>.</div>
+            </div>
+            <div class="download-card">
+              <h4>הוספת קבצים נוספים</h4>
+              <p>בהמשך ניתן להוסיף mappings, קבצי XSD, דוגמאות XML או חבילות יישום נוספות באותו דפוס.</p>
+              <div class="code"><pre>&lt;a class="download-btn"
+   href="MyMapping.zip"
+   download&gt;
+   Download MyMapping.zip
+&lt;/a&gt;</pre></div>
+            </div>
+          </div>
         </div>
       </section>
 
