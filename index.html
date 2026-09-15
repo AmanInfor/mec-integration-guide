@@ -226,6 +226,7 @@ body.lang-he .modal-close{right:auto;left:20px}
         <a href="#manifest">4. Manifest → CONO</a>
         <a href="#mapper">5. InitialMapTemplate structure</a>
         <a href="#variables">5.1 Variables & constants</a>
+        <a href="#counter">5.2 Persistent sequence counters</a>
         <a href="#input">6. Input adaptability</a>
         <a href="#errors">7. Error framework</a>
         <a href="#implementation">8. Implementation guide</a>
@@ -242,6 +243,7 @@ body.lang-he .modal-close{right:auto;left:20px}
         <a href="#manifest">4. Manifest → CONO</a>
         <a href="#mapper">5. מבנה InitialMapTemplate</a>
         <a href="#variables">5.1 משתנים וקבועים</a>
+        <a href="#counter">5.2 מונים רציפים מתמשכים</a>
         <a href="#input">6. התאמת הקלט</a>
         <a href="#errors">7. תשתית שגיאות</a>
         <a href="#implementation">8. מדריך יישום</a>
@@ -630,6 +632,186 @@ if (oCono.isEmpty()) {
         <div class="callout ok">
           <div class="lang-block en"><b>What normally changes in a copied template:</b> <code>MAPPING</code> must identify the new interface; <code>FAIL_ON_FIRST_ERROR</code> is selected according to the process requirement; <code>GET_CONO_FROM_CP</code> is enabled for the Connection Point–driven multi-company pattern. The collection variables and counter normally remain infrastructure and are not redesigned per interface.</div>
           <div class="lang-block he"><b>מה בדרך כלל משתנה בהעתקת התבנית:</b> יש לעדכן את <code>MAPPING</code> כך שיזהה את הממשק החדש; את <code>FAIL_ON_FIRST_ERROR</code> בוחרים לפי דרישת התהליך; את <code>GET_CONO_FROM_CP</code> מפעילים עבור תבנית multi-company המבוססת על Connection Point. משתני האוסף והמונה בדרך כלל נשארים כתשתית ואינם מתוכננים מחדש לכל ממשק.</div>
+        </div>
+      </section>
+
+      <section class="section" id="counter">
+        <div class="lang-block en">
+          <span class="kicker">MEC utility</span>
+          <h2>5.2 Persistent sequential numbering with MessageCounter</h2>
+          <p class="lead">When an integration needs a sequential number for an output file, message or business execution, use the standard MEC <code>MessageCounter</code> utility instead of maintaining a Java global variable or implementing a manual read → increment → write mechanism.</p>
+
+          <div class="callout ok">
+            <b>Purpose:</b> <code>MessageCounter</code> delegates sequence allocation to MEC and keeps the counter outside the local Java function state. The same mapping can therefore continue the sequence across separate executions, regardless of who initiated the message. This is the preferred pattern when executions may overlap or run in parallel.
+          </div>
+
+          <p>The counter is identified by a stable <code>counterId</code> and can also be scoped by supported key fields. Two common usage patterns are shown below.</p>
+
+          <h3>Option A — Continuous counter for the mapping</h3>
+          <p>Use the simple overload when one continuously increasing sequence is required for the mapping.</p>
+
+          <div class="code">
+            <span class="label">Java</span>
+            <pre>com.intentia.ecutil.util.MessageCounter mc =
+    new com.intentia.ecutil.util.MessageCounter(getManifestMap());
+
+String sequence = mc.getNewValue("FILE_COUNTER");</pre>
+          </div>
+
+          <div class="grid2">
+            <div class="card">
+              <h4>Sequence behavior</h4>
+              <p>The value continues between mapping executions:</p>
+              <div class="code"><pre>Run 1 → 1
+Run 2 → 2
+Run 3 → 3
+Run 4 → 4
+...</pre></div>
+            </div>
+            <div class="card">
+              <h4>Typical file-name usage</h4>
+              <div class="code"><pre>EXPORT_000001.txt
+EXPORT_000002.txt
+EXPORT_000003.txt</pre></div>
+              <p class="small">The <code>counterId</code> (<code>FILE_COUNTER</code> in this example) is a logical name chosen by the implementation.</p>
+            </div>
+          </div>
+
+          <h3>Option B — Counter scoped by key fields and date</h3>
+          <p>Use the extended overload when the sequence must be separated by additional context. The example below scopes the counter by the current <code>MAP_NAME</code> and by the current date.</p>
+
+          <div class="code">
+            <span class="label">Java</span>
+            <pre>com.intentia.ecutil.util.MessageCounter mc =
+    new com.intentia.ecutil.util.MessageCounter(getManifestMap());
+
+String date = java.time.LocalDate.now()
+    .format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE);
+
+String sequence = mc.getNewValue(
+    "FILE_COUNTER",
+    mc.MAP_NAME,
+    null,
+    null,
+    date
+);</pre>
+          </div>
+
+          <div class="callout">
+            <b>Daily sequence:</b> the date becomes part of the logical counter key. The previous counter is not physically reset; a new logical sequence is used for the new date. Therefore the first execution of each new day starts a new sequence.
+          </div>
+
+          <div class="grid2">
+            <div class="card">
+              <h4>Example</h4>
+              <div class="code"><pre>20260915 → 1, 2, 3, 4, ...
+20260916 → 1, 2, 3, ...
+20260917 → 1, 2, 3, ...</pre></div>
+            </div>
+            <div class="card">
+              <h4>Example file names</h4>
+              <div class="code"><pre>EXPORT_20260915_000001.txt
+EXPORT_20260915_000002.txt
+
+EXPORT_20260916_000001.txt
+EXPORT_20260916_000002.txt</pre></div>
+            </div>
+          </div>
+
+          <p>The <code>null</code> values in this overload represent unused <code>CONO</code> and <code>DIVI</code> key values. When required, the counter can be scoped more narrowly by the supported MEC key fields such as <code>MAP_NAME</code>, <code>PARTNER_ID</code>, <code>HOST</code>, <code>PORT</code> and <code>USER</code>, together with the available company/division/date parameters.</p>
+
+          <div class="callout warn">
+            <b>Important:</b> an Agreement name is not a standard <code>MessageCounter</code> key field. If the same mapping is reused by multiple Agreements and each Agreement requires an independent sequence, the design must provide a distinct counter identifier or another distinguishing scope.
+          </div>
+        </div>
+
+        <div class="lang-block he">
+          <span class="kicker">MEC utility</span>
+          <h2>5.2 מספור רציף ומתמשך באמצעות MessageCounter</h2>
+          <p class="lead">כאשר באינטגרציה נדרש מספר רץ עבור קובץ פלט, הודעה או הרצת תהליך, מומלץ להשתמש ב־<code>MessageCounter</code> הסטנדרטי של MEC במקום לשמור מונה ב־Java global variable או לממש באופן עצמאי מנגנון של read → increment → write.</p>
+
+          <div class="callout ok">
+            <b>מטרה:</b> <code>MessageCounter</code> מעביר את ניהול המספור ל־MEC ושומר את המונה מחוץ למצב המקומי של פונקציית ה־Java. כך אותו mapping יכול להמשיך את אותה סדרה בין הרצות נפרדות, ללא תלות במשתמש או בגורם שהפעיל את ההודעה. זהו הפתרון המועדף כאשר ייתכנו הרצות חופפות או מקבילות.
+          </div>
+
+          <p>המונה מזוהה באמצעות <code>counterId</code> קבוע, וניתן גם להגדיר עבורו scope באמצעות מפתחות נתמכים. להלן שתי צורות שימוש נפוצות.</p>
+
+          <h3>אפשרות A — מונה רציף קבוע עבור ה־mapping</h3>
+          <p>משתמשים ב־overload הפשוט כאשר נדרש רצף אחד שממשיך לגדול בכל הרצה של ה־mapping.</p>
+
+          <div class="code">
+            <span class="label">Java</span>
+            <pre>com.intentia.ecutil.util.MessageCounter mc =
+    new com.intentia.ecutil.util.MessageCounter(getManifestMap());
+
+String sequence = mc.getNewValue("FILE_COUNTER");</pre>
+          </div>
+
+          <div class="grid2">
+            <div class="card">
+              <h4>התנהגות הרצף</h4>
+              <p>הערך ממשיך בין הרצות שונות של ה־mapping:</p>
+              <div class="code"><pre>Run 1 → 1
+Run 2 → 2
+Run 3 → 3
+Run 4 → 4
+...</pre></div>
+            </div>
+            <div class="card">
+              <h4>שימוש טיפוסי בשם קובץ</h4>
+              <div class="code"><pre>EXPORT_000001.txt
+EXPORT_000002.txt
+EXPORT_000003.txt</pre></div>
+              <p class="small">ה־<code>counterId</code> (בדוגמה: <code>FILE_COUNTER</code>) הוא שם לוגי שנבחר על ידי המימוש.</p>
+            </div>
+          </div>
+
+          <h3>אפשרות B — מונה לפי מפתחות ותאריך</h3>
+          <p>משתמשים ב־overload המורחב כאשר יש להפריד את הרצף לפי הקשר נוסף. בדוגמה הבאה המונה מופרד לפי <code>MAP_NAME</code> הנוכחי ולפי התאריך הנוכחי.</p>
+
+          <div class="code">
+            <span class="label">Java</span>
+            <pre>com.intentia.ecutil.util.MessageCounter mc =
+    new com.intentia.ecutil.util.MessageCounter(getManifestMap());
+
+String date = java.time.LocalDate.now()
+    .format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE);
+
+String sequence = mc.getNewValue(
+    "FILE_COUNTER",
+    mc.MAP_NAME,
+    null,
+    null,
+    date
+);</pre>
+          </div>
+
+          <div class="callout">
+            <b>רצף יומי:</b> התאריך הופך לחלק מהמפתח הלוגי של המונה. המונה של היום הקודם אינו מתאפס פיזית; עבור התאריך החדש נעשה שימוש ברצף לוגי חדש. לכן ההרצה הראשונה בכל יום חדש מתחילה סדרה חדשה.
+          </div>
+
+          <div class="grid2">
+            <div class="card">
+              <h4>דוגמה</h4>
+              <div class="code"><pre>20260915 → 1, 2, 3, 4, ...
+20260916 → 1, 2, 3, ...
+20260917 → 1, 2, 3, ...</pre></div>
+            </div>
+            <div class="card">
+              <h4>דוגמה לשמות קבצים</h4>
+              <div class="code"><pre>EXPORT_20260915_000001.txt
+EXPORT_20260915_000002.txt
+
+EXPORT_20260916_000001.txt
+EXPORT_20260916_000002.txt</pre></div>
+            </div>
+          </div>
+
+          <p>ערכי ה־<code>null</code> ב־overload זה מייצגים ערכי מפתח <code>CONO</code> ו־<code>DIVI</code> שאינם בשימוש. במקרה הצורך ניתן לצמצם את ה־scope של המונה באמצעות מפתחות MEC נתמכים כגון <code>MAP_NAME</code>, <code>PARTNER_ID</code>, <code>HOST</code>, <code>PORT</code> ו־<code>USER</code>, יחד עם הפרמטרים הזמינים של חברה, חטיבה ותאריך.</p>
+
+          <div class="callout warn">
+            <b>חשוב:</b> שם ה־Agreement אינו שדה מפתח סטנדרטי של <code>MessageCounter</code>. אם אותו mapping משמש מספר Agreements וכל Agreement דורש רצף עצמאי, יש לספק <code>counterId</code> נפרד או scope נוסף שמבדיל ביניהם.
+          </div>
         </div>
       </section>
 
