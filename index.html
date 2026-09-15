@@ -642,10 +642,14 @@ if (oCono.isEmpty()) {
           <p class="lead">When an integration needs a sequential number for an output file, message or business execution, use the standard MEC <code>MessageCounter</code> utility instead of maintaining a Java global variable or implementing a manual read → increment → write mechanism.</p>
 
           <div class="callout ok">
-            <b>Purpose:</b> <code>MessageCounter</code> delegates sequence allocation to MEC and keeps the counter outside the local Java function state. The same mapping can therefore continue the sequence across separate executions, regardless of who initiated the message. This is the preferred pattern when executions may overlap or run in parallel.
+            <b>Purpose:</b> <code>MessageCounter</code> delegates sequence allocation to MEC and keeps the counter outside the local Java function state. The same mapping can therefore continue the persistent sequence across separate executions, regardless of who initiated the message.
           </div>
 
-          <p>The counter is identified by a stable <code>counterId</code> and can also be scoped by supported key fields. Two common usage patterns are shown below.</p>
+          <div class="callout">
+            <b>Parallel executions:</b> <code>MessageCounter</code> is managed by MEC rather than by a local Java variable. When parallel execution is relevant, validate the behavior in the target MEC environment with simultaneous runs. In our test, four parallel executions returned distinct sequential values as expected; this is recorded as a runtime test result, not as a separate API guarantee.
+          </div>
+
+          <p>The counter is identified by a stable <code>counterId</code> that we define ourselves. The identifier should clearly represent the logical sequence and be unique enough to avoid accidental reuse. A practical convention is to derive it from the Agreement name, for example <code>TEST_SF_IN_COUNTER</code>. The counter can also be scoped by supported key fields. Two common usage patterns are shown below.</p>
 
           <h3>Option A — Continuous counter for the mapping</h3>
           <p>Use the simple overload when one continuously increasing sequence is required for the mapping.</p>
@@ -655,7 +659,7 @@ if (oCono.isEmpty()) {
             <pre>com.intentia.ecutil.util.MessageCounter mc =
     new com.intentia.ecutil.util.MessageCounter(getManifestMap());
 
-String sequence = mc.getNewValue("FILE_COUNTER");</pre>
+String sequence = mc.getNewValue("TEST_SF_IN_COUNTER");</pre>
           </div>
 
           <div class="grid2">
@@ -673,7 +677,7 @@ Run 4 → 4
               <div class="code"><pre>EXPORT_000001.txt
 EXPORT_000002.txt
 EXPORT_000003.txt</pre></div>
-              <p class="small">The <code>counterId</code> (<code>FILE_COUNTER</code> in this example) is a logical name chosen by the implementation.</p>
+              <p class="small">The <code>counterId</code> is defined by us and should be stable and unique for the logical sequence we want to maintain. A recommended convention is to base it on the Agreement name, for example <code>TEST_SF_IN_COUNTER</code> (while respecting the counter ID length limit).</p>
             </div>
           </div>
 
@@ -689,8 +693,8 @@ String date = java.time.LocalDate.now()
     .format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE);
 
 String sequence = mc.getNewValue(
-    "FILE_COUNTER",
-    mc.MAP_NAME,
+    "TEST_SF_IN_DAILY",
+    com.intentia.ecutil.util.MessageCounter.MAP_NAME,
     null,
     null,
     date
@@ -731,10 +735,14 @@ EXPORT_20260916_000002.txt</pre></div>
           <p class="lead">כאשר באינטגרציה נדרש מספר רץ עבור קובץ פלט, הודעה או הרצת תהליך, מומלץ להשתמש ב־<code>MessageCounter</code> הסטנדרטי של MEC במקום לשמור מונה ב־Java global variable או לממש באופן עצמאי מנגנון של read → increment → write.</p>
 
           <div class="callout ok">
-            <b>מטרה:</b> <code>MessageCounter</code> מעביר את ניהול המספור ל־MEC ושומר את המונה מחוץ למצב המקומי של פונקציית ה־Java. כך אותו mapping יכול להמשיך את אותה סדרה בין הרצות נפרדות, ללא תלות במשתמש או בגורם שהפעיל את ההודעה. זהו הפתרון המועדף כאשר ייתכנו הרצות חופפות או מקבילות.
+            <b>מטרה:</b> <code>MessageCounter</code> מעביר את ניהול המספור ל־MEC ושומר את המונה מחוץ למצב המקומי של פונקציית ה־Java. כך אותו mapping יכול להמשיך רצף מתמשך בין הרצות נפרדות, ללא תלות במשתמש או בגורם שהפעיל את ההודעה.
           </div>
 
-          <p>המונה מזוהה באמצעות <code>counterId</code> קבוע, וניתן גם להגדיר עבורו scope באמצעות מפתחות נתמכים. להלן שתי צורות שימוש נפוצות.</p>
+          <div class="callout">
+            <b>הרצות מקבילות:</b> <code>MessageCounter</code> מנוהל על ידי MEC ולא באמצעות משתנה Java מקומי. כאשר קיימת חשיבות להרצות מקבילות, יש לאמת את ההתנהגות בסביבת ה־MEC היעד באמצעות מספר הרצות בו־זמנית. בבדיקה שבוצעה אצלנו, ארבע הרצות מקבילות החזירו ערכים רציפים ושונים כמצופה; זהו תיעוד של תוצאת בדיקת runtime ולא התחייבות נפרדת של ה־API.
+          </div>
+
+          <p>המונה מזוהה באמצעות <code>counterId</code> קבוע שאנו מגדירים בעצמנו. המזהה צריך לתאר בבירור את הרצף הלוגי ולהיות ייחודי מספיק כדי למנוע שימוש חוזר לא מכוון. מוסכמה מעשית היא לגזור אותו משם ה־Agreement, לדוגמה <code>TEST_SF_IN_COUNTER</code>. בנוסף ניתן להגדיר scope באמצעות מפתחות נתמכים. להלן שתי צורות שימוש נפוצות.</p>
 
           <h3>אפשרות A — מונה רציף קבוע עבור ה־mapping</h3>
           <p>משתמשים ב־overload הפשוט כאשר נדרש רצף אחד שממשיך לגדול בכל הרצה של ה־mapping.</p>
@@ -744,7 +752,7 @@ EXPORT_20260916_000002.txt</pre></div>
             <pre>com.intentia.ecutil.util.MessageCounter mc =
     new com.intentia.ecutil.util.MessageCounter(getManifestMap());
 
-String sequence = mc.getNewValue("FILE_COUNTER");</pre>
+String sequence = mc.getNewValue("TEST_SF_IN_COUNTER");</pre>
           </div>
 
           <div class="grid2">
@@ -762,7 +770,7 @@ Run 4 → 4
               <div class="code"><pre>EXPORT_000001.txt
 EXPORT_000002.txt
 EXPORT_000003.txt</pre></div>
-              <p class="small">ה־<code>counterId</code> (בדוגמה: <code>FILE_COUNTER</code>) הוא שם לוגי שנבחר על ידי המימוש.</p>
+              <p class="small">ה־<code>counterId</code> מוגדר על ידינו וצריך להיות קבוע וייחודי עבור הרצף הלוגי שאנו רוצים לנהל. מומלץ לבסס אותו על שם ה־Agreement, לדוגמה <code>TEST_SF_IN_COUNTER</code>, תוך שמירה על מגבלת האורך של מזהה המונה.</p>
             </div>
           </div>
 
@@ -778,8 +786,8 @@ String date = java.time.LocalDate.now()
     .format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE);
 
 String sequence = mc.getNewValue(
-    "FILE_COUNTER",
-    mc.MAP_NAME,
+    "TEST_SF_IN_DAILY",
+    com.intentia.ecutil.util.MessageCounter.MAP_NAME,
     null,
     null,
     date
